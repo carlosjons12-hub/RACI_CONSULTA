@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estatus RACI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --raci-a: #10b981; --raci-b: #8b5cf6; --raci-c: #f59e0b; --dark-bg: #0f172a; --accent: #3b82f6; }
+        body { background: #f1f5f9; font-family: 'Plus Jakarta Sans', sans-serif; color: #1e293b; }
+
+        /* Estilos Web */
+        #adminPanel { display: none; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); color: white; padding: 30px; position: fixed; top: 0; width: 100%; z-index: 2000; border-bottom: 3px solid var(--accent); }
+        .main-card { display: none; border-radius: 30px; background: #fff; margin-top: 30px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.05); }
+        .header-raci { padding: 60px 20px; text-align: center; color: white; }
+        .nivel-A .header-raci { background: linear-gradient(135deg, #065f46, var(--raci-a)); }
+        .nivel-B .header-raci { background: linear-gradient(135deg, #5b21b6, var(--raci-b)); }
+        .nivel-C .header-raci { background: linear-gradient(135deg, #92400e, var(--raci-c)); }
+
+        .stat-row { padding: 20px; border-radius: 20px; margin-bottom: 12px; background: #f8fafc; border: 1px solid #edf2f7; cursor: pointer; }
+        .detail-box { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; background: #1e293b !important; border-radius: 15px; }
+        .stat-row:hover .detail-box { max-height: 500px; opacity: 1; margin-top: 15px; padding: 20px; }
+        
+        .item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff !important; }
+        .txt-tengo { color: #60a5fa !important; font-weight: 700; }
+        .txt-meta { color: #94a3b8 !important; font-size: 0.75rem; }
+
+        .roadmap-list { list-style: none; padding: 0; }
+        .roadmap-list li { margin-bottom: 12px; padding: 15px 15px 15px 45px; background: #fff; border-radius: 15px; position: relative; font-size: 0.9rem; border: 1px solid #eee; border-left: 5px solid #ef4444; }
+        .roadmap-list li::before { content: "\F282"; font-family: bootstrap-icons; position: absolute; left: 15px; color: #ef4444; font-weight: bold; }
+        
+        .admin-float { position: fixed; bottom: 30px; right: 30px; z-index: 1000; }
+        .btn-admin { width: 55px; height: 55px; border-radius: 15px; background: var(--dark-bg); color: white; border: none; opacity: 0.4; }
+        
+        .report-summary-box { background: var(--dark-bg); color: white; padding: 20px; border-radius: 20px; margin-bottom: 25px; }
+
+        /* OPTIMIZACIÓN PDF: Evita el blanco eliminando efectos pesados durante la generación */
+        .html2pdf__container .stat-row:hover .detail-box { max-height: none; opacity: 1; }
+        .html2pdf__container #adminPanel, .html2pdf__container .admin-float { display: none !important; }
+        .html2pdf__container body { background: white !important; }
+    </style>
+</head>
+<body>
+
+<div id="adminPanel">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-3"><h5>CARGAR DATOS</h5><input type="file" id="excelBtn" accept=".csv" class="form-control form-control-sm mt-2"></div>
+            <div class="col-md-9 text-end">
+                <button class="btn btn-sm btn-light fw-bold" onclick="generarReporte('ALL')">TODOS</button>
+                <button class="btn btn-sm btn-success fw-bold" onclick="generarReporte('A')">RACI A</button>
+                <button class="btn btn-sm btn-primary fw-bold" onclick="generarReporte('B')">RACI B</button>
+                <button class="btn btn-sm btn-warning fw-bold" onclick="generarReporte('C')">RACI C</button>
+                <button id="btnPdf" class="btn btn-sm btn-danger ms-4 fw-bold" onclick="exportarTablaPDF()">EXPORTAR REPORTE PDF</button>
+                <button class="btn btn-sm btn-outline-light ms-2" onclick="document.getElementById('adminPanel').style.display='none'">X</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-3 fw-800" style="font-weight:800">CONSULTA TU <span class="text-primary">RACI</span></h1>
+        <div class="input-group w-50 mx-auto mt-4 bg-white p-2 border rounded-pill shadow-sm">
+            <input type="text" id="idSearch" class="form-control border-0 ps-4" placeholder="ID del Colaborador...">
+            <button class="btn btn-primary rounded-pill px-4 fw-bold" onclick="buscarID()">ANALIZAR</button>
+        </div>
+    </div>
+
+    <div id="resultado" class="main-card">
+        <div id="themeContainer">
+            <div class="header-raci">
+                <h1 id="resNombre" class="display-2 fw-bold mb-0">---</h1>
+                <p id="resID" class="fs-4 opacity-75">---</p>
+            </div>
+            <div class="p-5">
+                <div class="row g-5">
+                    <div class="col-lg-7"><h4>Indicadores de Desempeño</h4><div id="graficas"></div></div>
+                    <div class="col-lg-5">
+                        <div class="p-4 bg-light rounded-4 border h-100">
+                            <div class="text-center mb-4"><h1 class="display-1 fw-bold my-2" id="resTotal">0.000</h1><div id="resBadge" class="badge rounded-pill px-4 py-2 fs-5">---</div></div>
+                            <hr><h6 id="roadmapTitle" class="fw-bold text-dark mb-3 text-uppercase small"></h6>
+                            <ul id="resRoadmap" class="roadmap-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reporteSeccion" style="display:none;" class="mt-4">
+        <div class="report-summary-box">
+            <h3 class="fw-bold mb-1" id="tituloFiltro">---</h3>
+            <p class="mb-0 opacity-75" id="contadorConsultores">---</p>
+        </div>
+        <div id="tablaContenedor" class="bg-white rounded-4 p-4 shadow-sm">
+            <table class="table align-middle">
+                <thead><tr><th>Nombre</th><th class="text-center">ID</th><th class="text-center">Nivel</th><th class="text-center">Puntaje</th></tr></thead>
+                <tbody id="reporteCuerpo"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="admin-float"><button class="btn-admin" onclick="abrirAdmin()"><i class="bi bi-gear-fill"></i></button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script>
+    let currentData = [];
+    const PASS = "Praxis.2026#";
+
+    function abrirAdmin() { if (prompt("Contraseña:") === PASS) document.getElementById('adminPanel').style.display = 'block'; }
+
+    function fixText(str) {
+        if (!str) return "";
+        return str.replace(/Ã±/g, 'ñ').replace(/Ã¡/g, 'á').replace(/Ã©/g, 'é').replace(/Ã/g, 'í').replace(/Ã³/g, 'ó').replace(/Ãº/g, 'ú').replace(/Ã‘/g, 'Ñ').trim();
+    }
+
+    function parseVal(val) {
+        if (!val) return 0;
+        let s = val.toString().replace('%', '').trim();
+        let n = parseFloat(s);
+        if (isNaN(n)) return 0;
+        return val.toString().includes('%') ? n / 100 : (n > 1 ? n / 100 : n);
+    }
+
+    document.getElementById('excelBtn').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.readAsText(e.target.files[0], "ISO-8859-1");
+        reader.onload = function() {
+            Papa.parse(reader.result, {
+                header: false, skipEmptyLines: true,
+                complete: function(res) {
+                    const idx = res.data.findIndex(r => r.includes("ID"));
+                    currentData = res.data.slice(idx + 1);
+                    alert("Datos cargados correctamente (" + currentData.length + " registros).");
+                    document.getElementById('adminPanel').style.display = 'none';
+                }
+            });
+        };
+    });
+
+    function buscarID() {
+        const id = document.getElementById('idSearch').value.trim().toUpperCase();
+        const r = currentData.find(row => row[1] && row[1].trim().toUpperCase() === id);
+        if(!r) return alert("ID no encontrado.");
+        
+        document.getElementById('reporteSeccion').style.display = 'none';
+        const d = {
+            nombre: fixText(r[2]), id: r[1],
+            cats: [
+                { l: "Desempeño Técnico", v: parseVal(r[9]), m: 0.15, items: [{n:"Retroalimentación",v:r[3],p:parseVal(r[4]),g:"Sobresaliente"},{n:"Evaluación Pares",v:r[5],p:parseVal(r[6]),g:"SI"},{n:"Shadowing",v:r[7],p:parseVal(r[8]),g:"SI"}] },
+                { l: "Desempeño Académico", v: parseVal(r[16]), m: 0.10, items: [{n:"Título Profesional",v:r[10],p:parseVal(r[11]),g:"SI"},{n:"Certificaciones",v:r[12],p:parseVal(r[13]),g:"5+"},{n:"Nivel Inglés",v:r[14],p:parseVal(r[15]),g:"Avanzado"}] },
+                { l: "Antigüedad", v: parseVal(r[19]), m: 0.10, items: [{n:"Antiguedad en la Empresa",v:r[17],p:parseVal(r[18]),g:"5 Años+"}] },
+                { l: "Nivel de Conocimiento", v: parseVal(r[24]), m: 0.25, items: [{n:"Cert. de la Especialidad",v:r[20],p:parseVal(r[21]),g:"4+"},{n:"Assessment",v:r[22],p:parseVal(r[23]),g:"Alto"}] },
+                { l: "Actitud", v: parseVal(r[29]), m: 0.25, items: [{n:"Trabajo Equipo",v:r[25],p:parseVal(r[26]),g:"Siempre"},{n:"Tareas",v:r[27],p:parseVal(r[28]),g:"Alta"}] },
+                { l: "Rentabilidad", v: parseVal(r[31]), m: 0.15, items: [{n:"Rentabilidad",v:r[30],p:parseVal(r[31]),g:"11%+"}] }
+                
+            ],
+            total: parseVal(r[32]), nivel: r[33]
+        };
+        render(d);
+    }
+
+    function render(d) {
+        document.getElementById('resultado').style.display = 'block';
+        document.getElementById('themeContainer').className = "nivel-" + d.nivel;
+        document.getElementById('resNombre').innerText = d.nombre;
+        document.getElementById('resID').innerText = "ID: " + d.id;
+        document.getElementById('resTotal').innerText = d.total.toFixed(3);
+        const b = document.getElementById('resBadge');
+        b.innerText = "Nivel Actual: " + d.nivel;
+        b.style.background = d.nivel === 'A' ? 'var(--raci-a)' : (d.nivel === 'B' ? 'var(--raci-b)' : 'var(--raci-c)');
+
+        const road = document.getElementById('resRoadmap'); road.innerHTML = "";
+        
+        if (d.nivel === 'A') {
+            document.getElementById('roadmapTitle').innerText = "Estatus: Nivel Máximo";
+            road.innerHTML = "<li style='border-left-color:#10b981'><b>¡Felicidades!</b> Mantén tus indicadores para conservar el Nivel A.</li>";
+        } else {
+            document.getElementById('roadmapTitle').innerText = "Guía para subir de nivel:";
+            d.cats.forEach(c => {
+                c.items.forEach(i => {
+                    let valU = (i.v || "").toString().toUpperCase();
+                    let metaU = (i.g || "").toString().toUpperCase();
+                    let cumple = false;
+
+                    if(metaU === "SI" && valU === "SI") cumple = true;
+                    if(metaU === "5+" && parseInt(i.v) >= 5) cumple = true;
+                    if(metaU === "4+" && parseInt(i.v) >= 4) cumple = true;
+                    if(metaU === "AVANZADO" && valU === "AVANZADO") cumple = true;
+                    if(metaU === "SOBRESALIENTE" && valU === "SOBRESALIENTE") cumple = true;
+                    if(metaU === "ALTO" && (valU === "ALTO" || valU === "SOBRESALIENTE")) cumple = true;
+                    if(metaU === "ALTA" && (valU === "ALTA" || valU === "SOBRESALIENTE")) cumple = true;
+                    if(metaU === "SIEMPRE" && valU === "SIEMPRE") cumple = true;
+                    if(metaU === "11%+" && parseVal(i.v) >= 0.11) cumple = true;
+                    if(i.n === "Antiguedad" && parseVal(i.p) >= 0.09) cumple = true;
+
+                    if (!cumple) {
+    const li = document.createElement('li');
+    
+    // CORRECCIÓN AQUÍ: 
+    // Si es Certificaciones o Cert. Especializada, usamos el valor original (i.v) 
+    // y solo si está realmente vacío ponemos "0"
+    let disp = i.v;
+    if (i.n.includes("Cert") || i.n.includes("Cert.")) {
+        disp = (i.v === "" || i.v === null || i.v === undefined) ? "0" : i.v;
+    } else {
+        // Para otros campos, si no hay dato, podemos mantener un texto descriptivo
+        disp = (!i.v || i.v === "0") ? "Pendiente" : i.v;
+    }
+
+    li.innerHTML = `<b>${i.n}:</b> Tienes <i>"${disp}"</i>. Meta: <b>"${i.g}"</b>.`;
+    road.appendChild(li);
+}
+                });
+            });
+        }
+
+        let h = '';
+        d.cats.forEach(c => {
+            let det = '';
+            c.items.forEach(i => {
+                let disp = (i.v === "0" || !i.v) ? "0" : i.v;
+                det += `<div class="item-row"><span>${i.n}</span><div><span class="txt-tengo">${disp}</span><span class="txt-meta"> / ${i.g}</span></div></div>`;
+            });
+            h += `<div class="stat-row">
+                <div class="d-flex justify-content-between fw-bold"><span>${c.l}</span><span>${(c.v*100).toFixed(1)}% / ${(c.m*100)}%</span></div>
+                <div class="progress" style="height:10px;"><div class="progress-bar" style="width:${Math.min((c.v/c.m)*100, 100)}%"></div></div>
+                <div class="detail-box"><p class="small fw-bold mb-2 text-info">AUDITORÍA</p>${det}</div>
+            </div>`;
+        });
+        document.getElementById('graficas').innerHTML = h;
+    }
+
+    function generarReporte(f) {
+        const c = document.getElementById('reporteCuerpo'); c.innerHTML = "";
+        let fil = currentData.filter(r => r[1] && r[2]);
+        if (f !== 'ALL') fil = fil.filter(r => r[33] === f);
+        
+        document.getElementById('tituloFiltro').innerText = f === 'ALL' ? 'Consolidado General' : `Consultores en RACI ${f}`;
+        document.getElementById('contadorConsultores').innerText = `Hay ${fil.length} consultores en este nivel.`;
+
+        fil.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><b>${fixText(r[2])}</b></td><td class="text-center">${r[1]}</td><td class="text-center"><span class="badge rounded-pill" style="background:${r[33]=='A'?'#10b981':r[33]=='B'?'#8b5cf6':'#f59e0b'}">${r[33]}</span></td><td class="text-center fw-bold">${parseVal(r[32]).toFixed(3)}</td>`;
+            c.appendChild(tr);
+        });
+        document.getElementById('resultado').style.display = 'none';
+        document.getElementById('reporteSeccion').style.display = 'block';
+    }
+
+    function exportarTablaPDF() {
+        const btn = document.getElementById('btnPdf');
+        const element = document.getElementById('reporteSeccion');
+        
+        if (element.style.display === 'none') return alert("Primero genera un reporte en pantalla.");
+        
+        btn.innerText = "GENERANDO...";
+        btn.disabled = true;
+
+        const opt = { 
+            margin: 10, 
+            filename: 'Reporte_GAIAC_Niveles.pdf', 
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 1.5, 
+                useCORS: true, 
+                letterRendering: true,
+                removeContainer: true
+            }, 
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerText = "EXPORTAR REPORTE PDF";
+            btn.disabled = false;
+        }).catch(err => {
+            console.error(err);
+            btn.disabled = false;
+        });
+    }
+</script>
+</body>
+</html>
