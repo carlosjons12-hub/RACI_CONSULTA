@@ -2,180 +2,142 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RACI PERFORMANCE 2026</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         :root { --raci-a: #10b981; --raci-b: #3b82f6; --raci-c: #f59e0b; }
-        body { background: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
-        
-        /* DISEÑO DE LA FICHA (USUARIO) */
-        .card-raci { background: white; border-radius: 20px; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; }
-        .header-raci { padding: 30px; text-align: center; color: white; transition: 0.3s; }
+        body { background: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+        .card-raci { background: white; border-radius: 20px; border: none; box-shadow: 0 8px 30px rgba(0,0,0,0.05); overflow: hidden; }
+        .header-raci { padding: 30px; text-align: center; color: white; }
         .nivel-A .header-raci { background: linear-gradient(135deg, #059669, var(--raci-a)); }
         .nivel-B .header-raci { background: linear-gradient(135deg, #2563eb, var(--raci-b)); }
         .nivel-C .header-raci { background: linear-gradient(135deg, #d97706, var(--raci-c)); }
-
-        /* TABLA ADMIN (OCULTA POR DEFECTO) */
-        #adminContainer { display: none; margin-top: 3rem; background: white; padding: 2rem; border-radius: 20px; }
-        
         .badge-lvl { padding: 5px 10px; border-radius: 6px; color: white; font-weight: bold; font-size: 0.8rem; }
         .bg-a { background-color: var(--raci-a); }
         .bg-b { background-color: var(--raci-b); }
         .bg-c { background-color: var(--raci-c); }
-
-        .btn-admin-gear { position: fixed; bottom: 20px; right: 20px; background: #334155; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; opacity: 0.2; }
+        /* El panel admin NO existe en el HTML inicial */
+        #adminArea { display: none; margin-top: 30px; }
+        .btn-gear { position: fixed; bottom: 15px; right: 15px; background: #334155; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; opacity: 0.1; }
     </style>
 </head>
 <body>
 
 <div class="container py-5">
-    <div id="userSection" class="text-center">
+    <div id="publicView" class="text-center">
         <h1 class="fw-bold mb-4">SISTEMA <span class="text-primary">RACI</span></h1>
-        <div class="input-group w-50 mx-auto shadow-sm p-2 bg-white rounded-pill">
+        <div class="input-group w-50 mx-auto shadow-sm p-2 bg-white rounded-pill border">
             <input type="text" id="idSearch" class="form-control border-0 ps-4" placeholder="Ingresa tu ID de consultor...">
-            <button class="btn btn-primary rounded-pill px-4" onclick="buscarIndividual()">CONSULTAR</button>
+            <button class="btn btn-primary rounded-pill px-4" onclick="buscarID()">BUSCAR</button>
         </div>
-        <div id="loadStatus" class="mt-3 small text-muted">Sincronizando...</div>
+        <div id="dataStatus" class="mt-3 small text-muted font-monospace">Iniciando conexión...</div>
     </div>
 
-    <div id="resCard" class="card-raci mt-5 mx-auto" style="display:none; max-width: 800px;">
-        <div id="resNivelContext">
+    <div id="resCard" class="card-raci mt-5 mx-auto" style="display:none; max-width: 750px;">
+        <div id="colorLvl">
             <div class="header-raci">
                 <h2 id="resNom" class="fw-bold mb-0"></h2>
                 <p id="resID" class="opacity-75 mb-0"></p>
             </div>
             <div class="p-4 row align-items-center">
-                <div class="col-md-7 border-end" id="resMetricas"></div>
+                <div class="col-md-7 border-end" id="resM"></div>
                 <div class="col-md-5 text-center">
                     <span class="text-muted small fw-bold">PUNTAJE</span>
-                    <h1 class="display-3 fw-bold" id="resTot">0.000</h1>
+                    <h1 class="display-3 fw-bold" id="resT">0.000</h1>
                     <div id="resBadge"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="adminContainer">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Listado General (Admin)</h4>
-            <div class="btn-group">
-                <button class="btn btn-outline-dark btn-sm" onclick="dibujarTabla('ALL')">TODOS</button>
-                <button class="btn btn-success btn-sm" onclick="dibujarTabla('A')">NIVEL A</button>
-                <button class="btn btn-primary btn-sm" onclick="dibujarTabla('B')">NIVEL B</button>
-                <button class="btn btn-warning btn-sm" onclick="dibujarTabla('C')">NIVEL C</button>
-            </div>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr><th>#</th><th>Nombre</th><th>ID</th><th class="text-center">Nivel / Cambio</th><th class="text-center">Puntaje</th></tr>
-                </thead>
-                <tbody id="adminTableBody"></tbody>
-            </table>
-        </div>
+    <div id="adminArea">
+        <div id="adminControls" class="d-flex justify-content-between align-items-center mb-4"></div>
+        <div class="card-raci"><div id="adminTableContainer"></div></div>
     </div>
 </div>
 
-<button class="btn-admin-gear" onclick="accesoAdmin()"><i class="bi bi-gear-fill"></i></button>
+<button class="btn-gear" onclick="unlockAdmin()"><i class="bi bi-gear-fill"></i></button>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
-    let dbActual = [];
-    let dbAnterior = [];
+    let dbA = [], dbOld = [];
 
-    // CARGA DE ARCHIVOS FORZADA
     window.onload = async () => {
-        const cacheBuster = `?t=${new Date().getTime()}`;
-        await Promise.all([
-            procesarArchivo(`actual.csv${cacheBuster}`, true),
-            procesarArchivo(`anterior.csv${cacheBuster}`, false)
-        ]);
-        document.getElementById('loadStatus').innerText = `Base de datos lista: ${dbActual.length} registros.`;
+        const ver = `?v=${new Date().getTime()}`; // Fuerza a GitHub a no usar caché
+        await Promise.all([ load("actual.csv" + ver, true), load("anterior.csv" + ver, false) ]);
+        document.getElementById('dataStatus').innerText = `Base de datos: ${dbA.length} registros cargados.`;
     };
 
-    async function procesarArchivo(url, esActual) {
+    async function load(url, isNew) {
         try {
-            const resp = await fetch(url);
-            const texto = await resp.text();
-            // Dividimos por líneas y limpiamos espacios vacíos al final del archivo
-            const lineas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
-            
-            let dataLimpia = [];
-            // Buscamos la fila que contiene las cabeceras
-            const startIdx = lineas.findIndex(l => l.toUpperCase().includes("ID") && l.toUpperCase().includes("NOMBRE"));
-            
-            if (startIdx === -1) return;
+            const r = await fetch(url);
+            const t = await r.text();
+            const json = Papa.parse(t, { header: false, skipEmptyLines: 'greedy' }).data;
+            const start = json.findIndex(row => row.join('').includes("ID"));
+            if (start === -1) return;
 
-            // Procesamos a partir de la cabecera
-            for (let i = startIdx + 1; i < lineas.length; i++) {
-                // Separar por comas (maneja comillas si las hay)
-                const c = lineas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                
-                // Si el ID (Columna 1) tiene datos, lo guardamos
-                if (c[1] && c[1].trim().length > 2) {
-                    dataLimpia.push({
-                        id: c[1].trim().toUpperCase().replace(/"/g, ''),
-                        nom: c[2]?.trim().replace(/"/g, '') || "N/A",
-                        lvl: c[9]?.trim().replace(/"/g, '') || "C",
-                        tot: parseFloat(c[33]) || 0,
-                        m: [c[16], c[19], c[24], c[29], c[31], c[32]] // Métricas
-                    });
-                }
-            }
-            if (esActual) dbActual = dataLimpia;
-            else dbAnterior = dataLimpia;
-        } catch (err) { console.error("Error en " + url); }
+            const mapped = json.slice(start + 1)
+                .filter(row => row[1] && row[1].trim().length > 2)
+                .map(row => ({
+                    id: row[1].trim().toUpperCase(),
+                    n: row[2], lvl: row[9],
+                    tot: parseFloat(row[33]) || 0,
+                    m: [row[16], row[19], row[24], row[29], row[31], row[32]]
+                }));
+            if (isNew) dbA = mapped; else dbOld = mapped;
+        } catch (e) { console.error("Error cargando archivo"); }
     }
 
-    function buscarIndividual() {
-        const id = document.getElementById('idSearch').value.trim().toUpperCase();
-        const u = dbActual.find(x => x.id === id);
-        
+    function buscarID() {
+        const val = document.getElementById('idSearch').value.trim().toUpperCase();
+        const u = dbA.find(x => x.id === val);
         if (!u) return alert("ID no encontrado.");
 
         document.getElementById('resCard').style.display = 'block';
-        document.getElementById('resNivelContext').className = 'nivel-' + u.lvl;
-        document.getElementById('resNom').innerText = u.nom;
+        document.getElementById('colorLvl').className = 'nivel-' + u.lvl;
+        document.getElementById('resNom').innerText = u.n;
         document.getElementById('resID').innerText = "ID: " + u.id;
-        document.getElementById('resTot').innerText = u.tot.toFixed(3);
+        document.getElementById('resT').innerText = u.tot.toFixed(3);
         document.getElementById('resBadge').innerHTML = `<span class="badge-lvl bg-${u.lvl.toLowerCase()}">NIVEL ${u.lvl}</span>`;
         
-        const labels = ["Técnico", "Académico", "Antigüedad", "Conocimiento", "Actitud", "Rentabilidad"];
-        document.getElementById('resMetricas').innerHTML = labels.map((l, i) => `
-            <div class="mb-2 d-flex justify-content-between small fw-bold"><span>${l}</span><span>${u.m[i] || 0}</span></div>
-            <div class="progress mb-2" style="height:6px;"><div class="progress-bar" style="width:${parseFloat(u.m[i])*100}%"></div></div>
+        const L = ["Técnico", "Académico", "Antigüedad", "Conocimiento", "Actitud", "Rentabilidad"];
+        document.getElementById('resM').innerHTML = L.map((l, i) => `
+            <div class="mb-2 d-flex justify-content-between small fw-bold"><span>${l}</span><span>${u.m[i]||0}</span></div>
+            <div class="progress mb-2" style="height:5px;"><div class="progress-bar" style="width:${parseFloat(u.m[i])*100}%"></div></div>
         `).join('');
     }
 
-    function accesoAdmin() {
-        if (prompt("Clave Admin:") === "Praxis.2026#") {
-            document.getElementById('adminContainer').style.display = 'block';
-            dibujarTabla('ALL');
+    function unlockAdmin() {
+        if (prompt("Acceso Admin:") === "Praxis.2026#") {
+            document.getElementById('adminArea').style.display = 'block';
+            // Crear botones de filtro dinámicamente
+            document.getElementById('adminControls').innerHTML = `
+                <h4 class="fw-bold mb-0">Listado Maestro</h4>
+                <div class="btn-group shadow-sm">
+                    <button class="btn btn-dark btn-sm" onclick="render('ALL')">TODOS</button>
+                    <button class="btn btn-success btn-sm" onclick="render('A')">A</button>
+                    <button class="btn btn-primary btn-sm" onclick="render('B')">B</button>
+                    <button class="btn btn-warning btn-sm" onclick="render('C')">C</button>
+                </div>`;
+            render('ALL');
             window.scrollTo(0, document.body.scrollHeight);
         }
     }
 
-    function dibujarTabla(filtro) {
-        const lista = filtro === 'ALL' ? dbActual : dbActual.filter(x => x.lvl === filtro);
-        const tbody = document.getElementById('adminTableBody');
-        tbody.innerHTML = "";
-
-        lista.forEach((u, i) => {
-            let cambioHtml = "";
-            const ant = dbAnterior.find(x => x.id === u.id);
-            if (ant && ant.lvl !== u.lvl) {
-                cambioHtml = `<span class="ms-2 small text-muted">(${ant.lvl} → ${u.lvl})</span>`;
-            }
-            tbody.innerHTML += `
-                <tr>
-                    <td>${i+1}</td>
-                    <td><div class="fw-bold">${u.nom}</div></td>
-                    <td><code>${u.id}</code></td>
-                    <td class="text-center"><span class="badge-lvl bg-${u.lvl.toLowerCase()}">${u.lvl}</span> ${cambioHtml}</td>
-                    <td class="text-center fw-bold">${u.tot.toFixed(3)}</td>
-                </tr>`;
+    function render(f) {
+        const list = f === 'ALL' ? dbA : dbA.filter(x => x.lvl === f);
+        let html = `<table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>#</th><th>Nombre</th><th>ID</th><th class="text-center">Nivel/Cambio</th><th class="text-center">Puntaje</th></tr></thead><tbody>`;
+        
+        list.forEach((u, i) => {
+            const old = dbOld.find(x => x.id === u.id);
+            const comp = (old && old.lvl !== u.lvl) ? `<span class="ms-2 small text-muted">(${old.lvl}→${u.lvl})</span>` : "";
+            html += `<tr><td>${i+1}</td><td><b>${u.n}</b></td><td><code>${u.id}</code></td>
+                <td class="text-center"><span class="badge-lvl bg-${u.lvl.toLowerCase()}">${u.lvl}</span>${comp}</td>
+                <td class="text-center fw-bold text-primary">${u.tot.toFixed(3)}</td></tr>`;
         });
+        document.getElementById('adminTableContainer').innerHTML = html + "</tbody></table>";
     }
 </script>
 </body>
