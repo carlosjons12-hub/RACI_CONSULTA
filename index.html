@@ -2,179 +2,177 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SISTEMA RACI - CONSULTA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RACI PERFORMANCE 2026</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --raci-a: #10b981; --raci-b: #3b82f6; --raci-c: #f59e0b; }
-        body { background: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
         
-        /* DISEÑO DE RESULTADOS */
-        .card-raci { background: white; border-radius: 24px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden; }
-        .header-raci { padding: 40px; text-align: center; color: white; }
+        /* DISEÑO DE LA FICHA (USUARIO) */
+        .card-raci { background: white; border-radius: 20px; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; }
+        .header-raci { padding: 30px; text-align: center; color: white; transition: 0.3s; }
         .nivel-A .header-raci { background: linear-gradient(135deg, #059669, var(--raci-a)); }
         .nivel-B .header-raci { background: linear-gradient(135deg, #2563eb, var(--raci-b)); }
         .nivel-C .header-raci { background: linear-gradient(135deg, #d97706, var(--raci-c)); }
 
-        .badge-lvl { padding: 6px 12px; border-radius: 8px; color: white; font-weight: 800; font-size: 0.85rem; display: inline-block; }
+        /* TABLA ADMIN (OCULTA POR DEFECTO) */
+        #adminContainer { display: none; margin-top: 3rem; background: white; padding: 2rem; border-radius: 20px; }
+        
+        .badge-lvl { padding: 5px 10px; border-radius: 6px; color: white; font-weight: bold; font-size: 0.8rem; }
         .bg-a { background-color: var(--raci-a); }
         .bg-b { background-color: var(--raci-b); }
         .bg-c { background-color: var(--raci-c); }
 
-        /* OCULTAR TODO LO DEL ADMIN AL INICIO */
-        #zonaAdmin { display: none; margin-top: 50px; padding: 20px; border-top: 2px solid #eee; }
-        .btn-gear { position: fixed; bottom: 20px; right: 20px; border-radius: 50%; width: 45px; height: 45px; background: #334155; color: white; border: none; opacity: 0.2; }
+        .btn-admin-gear { position: fixed; bottom: 20px; right: 20px; background: #334155; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; opacity: 0.2; }
     </style>
 </head>
 <body>
 
 <div class="container py-5">
-    <div id="seccionUsuario" class="text-center mb-5">
-        <h1 class="fw-800 display-5 mb-4" style="font-weight: 800;">PERFORMANCE <span class="text-primary">RACI</span></h1>
-        <div class="input-group w-50 mx-auto shadow-sm rounded-pill overflow-hidden bg-white p-2 border">
-            <input type="text" id="idInput" class="form-control border-0 ps-4" placeholder="Introduce tu ID de consultor...">
-            <button class="btn btn-primary rounded-pill px-4 fw-bold" onclick="ejecutarConsulta()">BUSCAR</button>
+    <div id="userSection" class="text-center">
+        <h1 class="fw-bold mb-4">SISTEMA <span class="text-primary">RACI</span></h1>
+        <div class="input-group w-50 mx-auto shadow-sm p-2 bg-white rounded-pill">
+            <input type="text" id="idSearch" class="form-control border-0 ps-4" placeholder="Ingresa tu ID de consultor...">
+            <button class="btn btn-primary rounded-pill px-4" onclick="buscarIndividual()">CONSULTAR</button>
         </div>
-        <div id="logStatus" class="mt-3 small text-muted font-monospace">Cargando datos...</div>
+        <div id="loadStatus" class="mt-3 small text-muted">Sincronizando...</div>
     </div>
 
-    <div id="fichaIndividual" class="card-raci mb-5" style="display:none;">
-        <div id="contenedorColor">
+    <div id="resCard" class="card-raci mt-5 mx-auto" style="display:none; max-width: 800px;">
+        <div id="resNivelContext">
             <div class="header-raci">
-                <h1 id="resNombre" class="fw-bold mb-0"></h1>
-                <p id="resID" class="fs-5 opacity-75 mb-0"></p>
+                <h2 id="resNom" class="fw-bold mb-0"></h2>
+                <p id="resID" class="opacity-75 mb-0"></p>
             </div>
             <div class="p-4 row align-items-center">
                 <div class="col-md-7 border-end" id="resMetricas"></div>
                 <div class="col-md-5 text-center">
-                    <h6 class="text-muted small fw-bold">PUNTAJE FINAL</h6>
-                    <h1 class="display-1 fw-bold mb-0" id="resTotal">0.000</h1>
-                    <div id="resBadge" class="mt-2"></div>
+                    <span class="text-muted small fw-bold">PUNTAJE</span>
+                    <h1 class="display-3 fw-bold" id="resTot">0.000</h1>
+                    <div id="resBadge"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="zonaAdmin">
+    <div id="adminContainer">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold mb-0">Panel Maestro</h3>
+            <h4 class="fw-bold">Listado General (Admin)</h4>
             <div class="btn-group">
-                <button class="btn btn-dark" onclick="renderAdminTable('ALL')">TODOS</button>
-                <button class="btn btn-success" onclick="renderAdminTable('A')">NIVEL A</button>
-                <button class="btn btn-primary" onclick="renderAdminTable('B')">NIVEL B</button>
-                <button class="btn btn-warning" onclick="renderAdminTable('C')">NIVEL C</button>
+                <button class="btn btn-outline-dark btn-sm" onclick="dibujarTabla('ALL')">TODOS</button>
+                <button class="btn btn-success btn-sm" onclick="dibujarTabla('A')">NIVEL A</button>
+                <button class="btn btn-primary btn-sm" onclick="dibujarTabla('B')">NIVEL B</button>
+                <button class="btn btn-warning btn-sm" onclick="dibujarTabla('C')">NIVEL C</button>
             </div>
         </div>
-        <div class="card-raci p-0">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small">
-                    <tr><th class="ps-4">#</th><th>CONSULTOR</th><th>ID</th><th class="text-center">NIVEL / CAMBIO</th><th class="text-center">PUNTAJE</th></tr>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>#</th><th>Nombre</th><th>ID</th><th class="text-center">Nivel / Cambio</th><th class="text-center">Puntaje</th></tr>
                 </thead>
-                <tbody id="cuerpoAdmin"></tbody>
+                <tbody id="adminTableBody"></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<button class="btn-gear" onclick="abrirAdmin()"><i class="bi bi-gear-fill"></i></button>
+<button class="btn-admin-gear" onclick="accesoAdmin()"><i class="bi bi-gear-fill"></i></button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
-    let dataActual = [];
-    let dataAnterior = [];
+    let dbActual = [];
+    let dbAnterior = [];
 
-    // 1. CARGA DE DATOS CON "ANTI-CACHÉ"
-    window.onload = () => {
-        const timestamp = new Date().getTime();
-        Promise.all([
-            fetchCSV(`actual.csv?v=${timestamp}`, true),
-            fetchCSV(`anterior.csv?v=${timestamp}`, false)
-        ]).then(() => {
-            document.getElementById('logStatus').innerHTML = `<span class="text-success"><i class="bi bi-database-check"></i> Base de datos activa: ${dataActual.length} registros</span>`;
-        });
+    // CARGA DE ARCHIVOS FORZADA
+    window.onload = async () => {
+        const cacheBuster = `?t=${new Date().getTime()}`;
+        await Promise.all([
+            procesarArchivo(`actual.csv${cacheBuster}`, true),
+            procesarArchivo(`anterior.csv${cacheBuster}`, false)
+        ]);
+        document.getElementById('loadStatus').innerText = `Base de datos lista: ${dbActual.length} registros.`;
     };
 
-    async function fetchCSV(url, esActual) {
+    async function procesarArchivo(url, esActual) {
         try {
-            const res = await fetch(url);
-            const text = await res.text();
-            const rows = Papa.parse(text, { header: false, skipEmptyLines: true }).data;
+            const resp = await fetch(url);
+            const texto = await resp.text();
+            // Dividimos por líneas y limpiamos espacios vacíos al final del archivo
+            const lineas = texto.split(/\r?\n/).filter(l => l.trim() !== "");
             
-            // BUSCAR CABECERAS DINÁMICAMENTE (Evita el error de columna movida)
-            const hIdx = rows.findIndex(r => r.join('|').toUpperCase().includes("ID|NOMBRE"));
-            if (hIdx === -1) return;
+            let dataLimpia = [];
+            // Buscamos la fila que contiene las cabeceras
+            const startIdx = lineas.findIndex(l => l.toUpperCase().includes("ID") && l.toUpperCase().includes("NOMBRE"));
             
-            const header = rows[hIdx].map(h => h.toUpperCase().trim());
-            const findCol = (name) => header.findIndex(h => h.includes(name));
+            if (startIdx === -1) return;
 
-            const colID = findCol("ID"), colNom = findCol("NOMBRE"), colLvl = findCol("NIVEL");
-            const colTot = findCol("PUNTAJE") || findCol("TOTAL");
-
-            // Filtrar y mapear solo filas con ID real
-            const listado = rows.slice(hIdx + 1)
-                .filter(r => r[colID] && r[colID].trim().length > 2)
-                .map(r => ({
-                    id: r[colID].trim().toUpperCase(),
-                    nom: r[colNom] || "S/N",
-                    lvl: r[colLvl] || "C",
-                    tot: parseFloat(r[colTot]) || 0,
-                    // Métricas (usando índices relativos a la cabecera si es posible)
-                    m: [r[16]||0, r[19]||0, r[24]||0, r[29]||0, r[31]||0, r[32]||0]
-                }));
-
-            if (esActual) dataActual = listado;
-            else dataAnterior = listado;
-        } catch (e) { console.error("Error cargando CSV"); }
+            // Procesamos a partir de la cabecera
+            for (let i = startIdx + 1; i < lineas.length; i++) {
+                // Separar por comas (maneja comillas si las hay)
+                const c = lineas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                
+                // Si el ID (Columna 1) tiene datos, lo guardamos
+                if (c[1] && c[1].trim().length > 2) {
+                    dataLimpia.push({
+                        id: c[1].trim().toUpperCase().replace(/"/g, ''),
+                        nom: c[2]?.trim().replace(/"/g, '') || "N/A",
+                        lvl: c[9]?.trim().replace(/"/g, '') || "C",
+                        tot: parseFloat(c[33]) || 0,
+                        m: [c[16], c[19], c[24], c[29], c[31], c[32]] // Métricas
+                    });
+                }
+            }
+            if (esActual) dbActual = dataLimpia;
+            else dbAnterior = dataLimpia;
+        } catch (err) { console.error("Error en " + url); }
     }
 
-    // 2. VISTA USUARIO: BUSQUEDA
-    function ejecutarConsulta() {
-        const buscar = document.getElementById('idInput').value.trim().toUpperCase();
-        const u = dataActual.find(x => x.id === buscar);
+    function buscarIndividual() {
+        const id = document.getElementById('idSearch').value.trim().toUpperCase();
+        const u = dbActual.find(x => x.id === id);
+        
+        if (!u) return alert("ID no encontrado.");
 
-        if(!u) return alert("ID no encontrado.");
-
-        document.getElementById('fichaIndividual').style.display = 'block';
-        document.getElementById('contenedorColor').className = 'nivel-' + u.lvl;
-        document.getElementById('resNombre').innerText = u.nom;
+        document.getElementById('resCard').style.display = 'block';
+        document.getElementById('resNivelContext').className = 'nivel-' + u.lvl;
+        document.getElementById('resNom').innerText = u.nom;
         document.getElementById('resID').innerText = "ID: " + u.id;
-        document.getElementById('resTotal').innerText = u.tot.toFixed(3);
+        document.getElementById('resTot').innerText = u.tot.toFixed(3);
         document.getElementById('resBadge').innerHTML = `<span class="badge-lvl bg-${u.lvl.toLowerCase()}">NIVEL ${u.lvl}</span>`;
-
+        
         const labels = ["Técnico", "Académico", "Antigüedad", "Conocimiento", "Actitud", "Rentabilidad"];
         document.getElementById('resMetricas').innerHTML = labels.map((l, i) => `
-            <div class="mb-2 d-flex justify-content-between small fw-bold"><span>${l}</span><span>${u.m[i]}</span></div>
+            <div class="mb-2 d-flex justify-content-between small fw-bold"><span>${l}</span><span>${u.m[i] || 0}</span></div>
             <div class="progress mb-2" style="height:6px;"><div class="progress-bar" style="width:${parseFloat(u.m[i])*100}%"></div></div>
         `).join('');
     }
 
-    // 3. VISTA ADMIN: PROTECCIÓN Y TABLAS
-    function abrirAdmin() {
-        if(prompt("Clave:") === "Praxis.2026#") {
-            document.getElementById('zonaAdmin').style.display = 'block';
-            renderAdminTable('ALL');
+    function accesoAdmin() {
+        if (prompt("Clave Admin:") === "Praxis.2026#") {
+            document.getElementById('adminContainer').style.display = 'block';
+            dibujarTabla('ALL');
             window.scrollTo(0, document.body.scrollHeight);
         }
     }
 
-    function renderAdminTable(filtro) {
-        const list = filtro === 'ALL' ? dataActual : dataActual.filter(x => x.lvl === filtro);
-        const tbody = document.getElementById('cuerpoAdmin');
+    function dibujarTabla(filtro) {
+        const lista = filtro === 'ALL' ? dbActual : dbActual.filter(x => x.lvl === filtro);
+        const tbody = document.getElementById('adminTableBody');
         tbody.innerHTML = "";
 
-        list.forEach((u, i) => {
-            let cambio = "";
-            const ant = dataAnterior.find(x => x.id === u.id);
-            if(ant && ant.lvl !== u.lvl) {
-                cambio = `<span class="ms-2 badge bg-light text-dark border small">${ant.lvl} <i class="bi bi-arrow-right"></i> ${u.lvl}</span>`;
+        lista.forEach((u, i) => {
+            let cambioHtml = "";
+            const ant = dbAnterior.find(x => x.id === u.id);
+            if (ant && ant.lvl !== u.lvl) {
+                cambioHtml = `<span class="ms-2 small text-muted">(${ant.lvl} → ${u.lvl})</span>`;
             }
             tbody.innerHTML += `
                 <tr>
-                    <td class="ps-4 text-muted small">${i+1}</td>
-                    <td><b>${u.nom}</b></td>
+                    <td>${i+1}</td>
+                    <td><div class="fw-bold">${u.nom}</div></td>
                     <td><code>${u.id}</code></td>
-                    <td class="text-center"><span class="badge-lvl bg-${u.lvl.toLowerCase()}">${u.lvl}</span>${cambio}</td>
+                    <td class="text-center"><span class="badge-lvl bg-${u.lvl.toLowerCase()}">${u.lvl}</span> ${cambioHtml}</td>
                     <td class="text-center fw-bold">${u.tot.toFixed(3)}</td>
                 </tr>`;
         });
