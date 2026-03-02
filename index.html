@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SISTEMA RACI - PERFORMANCE</title>
+    <title>SISTEMA RACI - CONSULTA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
@@ -10,66 +10,60 @@
         :root { --raci-a: #10b981; --raci-b: #3b82f6; --raci-c: #f59e0b; }
         body { background: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        /* ESTILOS DE NIVELES */
-        .badge-lvl { padding: 6px 12px; border-radius: 8px; color: white; font-weight: 800; font-size: 0.85rem; display: inline-block; }
-        .bg-a { background-color: var(--raci-a); }
-        .bg-b { background-color: var(--raci-b); }
-        .bg-c { background-color: var(--raci-c); }
-        
-        .change-pill { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid; margin-left: 10px; display: inline-block; }
-        .up { background: #dcfce7; color: #166534; border-color: #166534; }
-        .down { background: #fee2e2; color: #991b1b; border-color: #991b1b; }
-
+        /* DISEÑO DE RESULTADOS */
         .card-raci { background: white; border-radius: 24px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden; }
         .header-raci { padding: 40px; text-align: center; color: white; }
         .nivel-A .header-raci { background: linear-gradient(135deg, #059669, var(--raci-a)); }
         .nivel-B .header-raci { background: linear-gradient(135deg, #2563eb, var(--raci-b)); }
         .nivel-C .header-raci { background: linear-gradient(135deg, #d97706, var(--raci-c)); }
 
-        /* SECCIONES */
-        #adminArea { display: none; margin-top: 40px; padding-top: 30px; border-top: 2px dashed #cbd5e1; }
-        .btn-gear { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background: #1e293b; color: white; border: none; opacity: 0.3; }
-        .btn-gear:hover { opacity: 1; }
+        .badge-lvl { padding: 6px 12px; border-radius: 8px; color: white; font-weight: 800; font-size: 0.85rem; display: inline-block; }
+        .bg-a { background-color: var(--raci-a); }
+        .bg-b { background-color: var(--raci-b); }
+        .bg-c { background-color: var(--raci-c); }
+
+        /* OCULTAR TODO LO DEL ADMIN AL INICIO */
+        #zonaAdmin { display: none; margin-top: 50px; padding: 20px; border-top: 2px solid #eee; }
+        .btn-gear { position: fixed; bottom: 20px; right: 20px; border-radius: 50%; width: 45px; height: 45px; background: #334155; color: white; border: none; opacity: 0.2; }
     </style>
 </head>
 <body>
 
 <div class="container py-5">
-    <div id="userView" class="text-center mb-5">
+    <div id="seccionUsuario" class="text-center mb-5">
         <h1 class="fw-800 display-5 mb-4" style="font-weight: 800;">PERFORMANCE <span class="text-primary">RACI</span></h1>
-        
         <div class="input-group w-50 mx-auto shadow-sm rounded-pill overflow-hidden bg-white p-2 border">
-            <input type="text" id="idInput" class="form-control border-0 ps-4" placeholder="Ingresa tu ID de consultor...">
-            <button class="btn btn-primary rounded-pill px-4 fw-bold" onclick="consultar()">ANALIZAR</button>
+            <input type="text" id="idInput" class="form-control border-0 ps-4" placeholder="Introduce tu ID de consultor...">
+            <button class="btn btn-primary rounded-pill px-4 fw-bold" onclick="ejecutarConsulta()">BUSCAR</button>
         </div>
-        <div id="status" class="mt-3 small fw-bold text-muted">Sincronizando con GitHub...</div>
+        <div id="logStatus" class="mt-3 small text-muted font-monospace">Cargando datos...</div>
     </div>
 
     <div id="fichaIndividual" class="card-raci mb-5" style="display:none;">
-        <div id="temaNivel">
+        <div id="contenedorColor">
             <div class="header-raci">
-                <h1 id="uNombre" class="fw-bold mb-0"></h1>
-                <p id="uID" class="fs-5 opacity-75 mb-0"></p>
+                <h1 id="resNombre" class="fw-bold mb-0"></h1>
+                <p id="resID" class="fs-5 opacity-75 mb-0"></p>
             </div>
             <div class="p-4 row align-items-center">
-                <div class="col-md-7 border-end" id="uMetricas"></div>
+                <div class="col-md-7 border-end" id="resMetricas"></div>
                 <div class="col-md-5 text-center">
                     <h6 class="text-muted small fw-bold">PUNTAJE FINAL</h6>
-                    <h1 class="display-1 fw-bold mb-0" id="uTotal">0.000</h1>
-                    <div id="uBadge" class="mt-2"></div>
+                    <h1 class="display-1 fw-bold mb-0" id="resTotal">0.000</h1>
+                    <div id="resBadge" class="mt-2"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="adminArea">
+    <div id="zonaAdmin">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold mb-0 text-dark">Panel Administrativo (Filtros y Comparativa)</h4>
+            <h3 class="fw-bold mb-0">Panel Maestro</h3>
             <div class="btn-group">
-                <button class="btn btn-dark btn-sm" onclick="mostrarTabla('ALL')">TODOS</button>
-                <button class="btn btn-success btn-sm" onclick="mostrarTabla('A')">NIVEL A</button>
-                <button class="btn btn-primary btn-sm" onclick="mostrarTabla('B')">NIVEL B</button>
-                <button class="btn btn-warning btn-sm" onclick="mostrarTabla('C')">NIVEL C</button>
+                <button class="btn btn-dark" onclick="renderAdminTable('ALL')">TODOS</button>
+                <button class="btn btn-success" onclick="renderAdminTable('A')">NIVEL A</button>
+                <button class="btn btn-primary" onclick="renderAdminTable('B')">NIVEL B</button>
+                <button class="btn btn-warning" onclick="renderAdminTable('C')">NIVEL C</button>
             </div>
         </div>
         <div class="card-raci p-0">
@@ -83,112 +77,105 @@
     </div>
 </div>
 
-<button class="btn-gear" onclick="loginAdmin()"><i class="bi bi-gear-fill"></i></button>
+<button class="btn-gear" onclick="abrirAdmin()"><i class="bi bi-gear-fill"></i></button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
-    let dbActual = [];
-    let dbAnterior = [];
+    let dataActual = [];
+    let dataAnterior = [];
 
+    // 1. CARGA DE DATOS CON "ANTI-CACHÉ"
     window.onload = () => {
+        const timestamp = new Date().getTime();
         Promise.all([
-            fetchData('actual.csv', true),
-            fetchData('anterior.csv', false)
+            fetchCSV(`actual.csv?v=${timestamp}`, true),
+            fetchCSV(`anterior.csv?v=${timestamp}`, false)
         ]).then(() => {
-            document.getElementById('status').innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill"></i> Base de datos lista: ${dbActual.length} registros</span>`;
+            document.getElementById('logStatus').innerHTML = `<span class="text-success"><i class="bi bi-database-check"></i> Base de datos activa: ${dataActual.length} registros</span>`;
         });
     };
 
-    function loginAdmin() {
-        if(prompt("Password:") === "Praxis.2026#") {
-            document.getElementById('adminArea').style.display = 'block';
-            mostrarTabla('ALL');
+    async function fetchCSV(url, esActual) {
+        try {
+            const res = await fetch(url);
+            const text = await res.text();
+            const rows = Papa.parse(text, { header: false, skipEmptyLines: true }).data;
+            
+            // BUSCAR CABECERAS DINÁMICAMENTE (Evita el error de columna movida)
+            const hIdx = rows.findIndex(r => r.join('|').toUpperCase().includes("ID|NOMBRE"));
+            if (hIdx === -1) return;
+            
+            const header = rows[hIdx].map(h => h.toUpperCase().trim());
+            const findCol = (name) => header.findIndex(h => h.includes(name));
+
+            const colID = findCol("ID"), colNom = findCol("NOMBRE"), colLvl = findCol("NIVEL");
+            const colTot = findCol("PUNTAJE") || findCol("TOTAL");
+
+            // Filtrar y mapear solo filas con ID real
+            const listado = rows.slice(hIdx + 1)
+                .filter(r => r[colID] && r[colID].trim().length > 2)
+                .map(r => ({
+                    id: r[colID].trim().toUpperCase(),
+                    nom: r[colNom] || "S/N",
+                    lvl: r[colLvl] || "C",
+                    tot: parseFloat(r[colTot]) || 0,
+                    // Métricas (usando índices relativos a la cabecera si es posible)
+                    m: [r[16]||0, r[19]||0, r[24]||0, r[29]||0, r[31]||0, r[32]||0]
+                }));
+
+            if (esActual) dataActual = listado;
+            else dataAnterior = listado;
+        } catch (e) { console.error("Error cargando CSV"); }
+    }
+
+    // 2. VISTA USUARIO: BUSQUEDA
+    function ejecutarConsulta() {
+        const buscar = document.getElementById('idInput').value.trim().toUpperCase();
+        const u = dataActual.find(x => x.id === buscar);
+
+        if(!u) return alert("ID no encontrado.");
+
+        document.getElementById('fichaIndividual').style.display = 'block';
+        document.getElementById('contenedorColor').className = 'nivel-' + u.lvl;
+        document.getElementById('resNombre').innerText = u.nom;
+        document.getElementById('resID').innerText = "ID: " + u.id;
+        document.getElementById('resTotal').innerText = u.tot.toFixed(3);
+        document.getElementById('resBadge').innerHTML = `<span class="badge-lvl bg-${u.lvl.toLowerCase()}">NIVEL ${u.lvl}</span>`;
+
+        const labels = ["Técnico", "Académico", "Antigüedad", "Conocimiento", "Actitud", "Rentabilidad"];
+        document.getElementById('resMetricas').innerHTML = labels.map((l, i) => `
+            <div class="mb-2 d-flex justify-content-between small fw-bold"><span>${l}</span><span>${u.m[i]}</span></div>
+            <div class="progress mb-2" style="height:6px;"><div class="progress-bar" style="width:${parseFloat(u.m[i])*100}%"></div></div>
+        `).join('');
+    }
+
+    // 3. VISTA ADMIN: PROTECCIÓN Y TABLAS
+    function abrirAdmin() {
+        if(prompt("Clave:") === "Praxis.2026#") {
+            document.getElementById('zonaAdmin').style.display = 'block';
+            renderAdminTable('ALL');
             window.scrollTo(0, document.body.scrollHeight);
         }
     }
 
-    async function fetchData(url, esActual) {
-        try {
-            const response = await fetch(url);
-            const data = await response.text();
-            
-            // PROCESAMIENTO LÍNEA POR LÍNEA (EVITA EL ERROR 194)
-            const lines = data.split(/\r?\n/);
-            let result = [];
-            let headerFound = false;
-
-            for (let line of lines) {
-                // Separamos por comas pero respetando si hay comas dentro de comillas
-                const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                
-                if (!headerFound) {
-                    if (line.includes("ID") && line.includes("NOMBRE")) headerFound = true;
-                    continue;
-                }
-
-                // Si la columna del ID (índice 1) tiene texto, procesamos
-                if (cols[1] && cols[1].trim().length > 2) {
-                    result.push({
-                        id: cols[1].trim().toUpperCase().replace(/"/g, ''),
-                        nom: cols[2]?.replace(/"/g, '') || "N/A",
-                        lvl: cols[9]?.replace(/"/g, '') || "C",
-                        tec: cols[16] || "0", aca: cols[19] || "0", ant: cols[24] || "0",
-                        con: cols[29] || "0", act: cols[31] || "0", ren: cols[32] || "0",
-                        tot: parseFloat(cols[33]) || 0
-                    });
-                }
-            }
-            if (esActual) dbActual = result;
-            else dbAnterior = result;
-        } catch (e) { console.error("Error cargando: " + url); }
-    }
-
-    function consultar() {
-        const id = document.getElementById('idInput').value.trim().toUpperCase();
-        const u = dbActual.find(user => user.id === id);
-        
-        if(!u) {
-            alert("ID no encontrado. Asegúrate de escribirlo correctamente.");
-            return;
-        }
-
-        document.getElementById('fichaIndividual').style.display = 'block';
-        document.getElementById('temaNivel').className = 'nivel-' + u.lvl;
-        document.getElementById('uNombre').innerText = u.nom;
-        document.getElementById('uID').innerText = "ID CONSULTOR: " + u.id;
-        document.getElementById('uTotal').innerText = u.tot.toFixed(3);
-        document.getElementById('uBadge').innerHTML = `<span class="badge-lvl bg-${u.lvl.toLowerCase()}">NIVEL ${u.lvl}</span>`;
-
-        const stats = [
-            {l:"Técnico",v:u.tec}, {l:"Académico",v:u.aca}, {l:"Antigüedad",v:u.ant},
-            {l:"Conocimiento",v:u.con}, {l:"Actitud",v:u.act}, {l:"Rentabilidad",v:u.ren}
-        ];
-        document.getElementById('uMetricas').innerHTML = stats.map(s => `
-            <div class="mb-2 d-flex justify-content-between small fw-bold"><span>${s.l}</span><span>${s.v}</span></div>
-            <div class="progress mb-3" style="height:7px;"><div class="progress-bar" style="width:${parseFloat(s.v)*100}%"></div></div>
-        `).join('');
-    }
-
-    function mostrarTabla(filtro) {
-        const data = filtro === 'ALL' ? dbActual : dbActual.filter(x => x.lvl === filtro);
+    function renderAdminTable(filtro) {
+        const list = filtro === 'ALL' ? dataActual : dataActual.filter(x => x.lvl === filtro);
         const tbody = document.getElementById('cuerpoAdmin');
         tbody.innerHTML = "";
 
-        data.forEach((u, i) => {
+        list.forEach((u, i) => {
             let cambio = "";
-            const ant = dbAnterior.find(x => x.id === u.id);
+            const ant = dataAnterior.find(x => x.id === u.id);
             if(ant && ant.lvl !== u.lvl) {
-                const mejoro = u.lvl < ant.lvl;
-                cambio = `<span class="change-pill ${mejoro?'up':'down'}">${ant.lvl} <i class="bi bi-arrow-right"></i> ${u.lvl}</span>`;
+                cambio = `<span class="ms-2 badge bg-light text-dark border small">${ant.lvl} <i class="bi bi-arrow-right"></i> ${u.lvl}</span>`;
             }
-
             tbody.innerHTML += `
                 <tr>
                     <td class="ps-4 text-muted small">${i+1}</td>
-                    <td><div class="fw-bold">${u.nom}</div></td>
+                    <td><b>${u.nom}</b></td>
                     <td><code>${u.id}</code></td>
-                    <td class="text-center"><span class="badge-lvl bg-${u.lvl.toLowerCase()}">${u.lvl}</span> ${cambio}</td>
-                    <td class="text-center fw-bold text-primary">${u.tot.toFixed(3)}</td>
+                    <td class="text-center"><span class="badge-lvl bg-${u.lvl.toLowerCase()}">${u.lvl}</span>${cambio}</td>
+                    <td class="text-center fw-bold">${u.tot.toFixed(3)}</td>
                 </tr>`;
         });
     }
